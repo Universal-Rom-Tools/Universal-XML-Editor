@@ -1,0 +1,71 @@
+<progressbar>
+	<prSET_ROM_CREATEARRAY>Calcul des HASH</prSET_ROM_CREATEARRAY>
+	<prSET_XML_CREATEROM>Création du fichier XML</prSET_XML_CREATEROM>
+	<prSET_SYSTEM_CREATEARRAY>Récupération de la liste des systèmes</prSET_SYSTEM_CREATEARRAY>
+</progressbar>
+
+<gui>
+	<main_gui>Universale XML Scraper</main_gui>
+	<menu>
+		<mnu_file>Fichier</mnu_file>
+		<mnu_file_profil>Charger un profil</mnu_file_profil>
+		<mnu_file_exit>Quitter</mnu_file_exit>
+		<mnu_edit>Edition</mnu_edit>
+		<mnu_edit_langue>Changer de langue</mnu_edit_langue>
+		<mnu_edit_config>Configuration</mnu_edit_config>
+		<mnu_help>Aide</mnu_help>
+		<mnu_help_about>A propos</mnu_help_about>
+	</menu>
+	<windows>
+		<scrap_button>Scraper</scrap_button>
+		<scrap_cancel_button>Annuler</scrap_cancel_button>
+		<win_sel_langue>
+			<win_sel_langue_Title>Sélectionner une langue</win_sel_langue_Title>
+			<win_sel_langue_text>Merci de sélectionner une langue</win_sel_langue_text>
+			<win_sel_langue_button>Sélectionner</win_sel_langue_button>
+		</win_sel_langue>
+		<win_sel_profil>
+			<win_sel_profil_Title>Sélectionner un profil</win_sel_profil_Title>
+			<win_sel_profil_text>Merci de sélectionner un profil</win_sel_profil_text>
+			<win_sel_profil_button>Sélectionner</win_sel_profil_button>
+		</win_sel_profil>
+		<win_sel_system>
+			<win_sel_system_Title>Sélectionner un systéme</win_sel_system_Title>
+			<win_sel_system_text>Merci de sélectionner un systéme</win_sel_system_text>
+			<win_sel_system_button>Sélectionner</win_sel_system_button>
+		</win_sel_system>
+		<win_config>
+			<win_config_Title>Configuration</win_config_Title>
+			<win_config_GroupScrap>Scraper</win_config_GroupScrap>
+			<win_config_GroupScrap_PathRom>Chemin des roms a scrapper</win_config_GroupScrap_PathRom>
+			<win_config_GroupScrap_PathXML>Chemin du fichier XML</win_config_GroupScrap_PathXML>
+			<win_config_GroupScrap_PathRomSub>Chemin des roms dans le fichier XML</win_config_GroupScrap_PathRomSub>
+			<win_config_GroupImage>Images</win_config_GroupImage>
+			<win_config_GroupImage_PathImage>Chemin des images à télécharger</win_config_GroupImage_PathImage>
+			<win_config_GroupImage_hautImage>Hauteur</win_config_GroupImage_hautImage>
+			<win_config_GroupImage_LongImage>Longueur</win_config_GroupImage_LongImage>
+			<win_config_GroupImage_PathImageSub>Chemin des images dans le fichier XML</win_config_GroupImage_PathImageSub>
+			<win_config_Enreg>Enregistrer</win_config_Enreg>
+			<win_config_Cancel>Annuler</win_config_Cancel>
+		</win_config>
+	</windows>	
+</gui>
+
+<windows>
+	<win_About>
+		<win_About_Title>A propos</win_About_Title>
+		<win_About_By>Auteur : Screech</win_About_By>
+		<win_About_Thanks>Remerciement à :</win_About_Thanks>
+	</win_About>
+	<win_Datas>
+		<win_Datas_Title>Compte rendu</win_Datas_Title>
+		<win_Datas_Text>Scrape Terminé</win_Datas_Text>
+		<win_Datas_Roms>Nombre de Roms : </win_Datas_Roms>
+		<win_Datas_MoyTime>Temp moyen par Roms : </win_Datas_MoyTime>
+		<win_Datas_FullTime>Temp Total du Scrape : </win_Datas_FullTime>
+	</win_Datas>
+	<win_Cancel>
+		<win_Cancel_Title>Scrape Annulé</win_Cancel_Title>
+		<win_Cancel_Text>Scrape Annulé</win_Cancel_Text>
+	</win_Cancel>
+</windows>
