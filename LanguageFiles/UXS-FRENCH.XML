@@ -30,7 +30,7 @@
 			<win_sel_profil_button>Sélectionner</win_sel_profil_button>
 		</win_sel_profil>
 		<win_sel_system>
-			<win_sel_system_Title>Sélectionner un systéme</win_sel_system_Title>
+			<win_sel_xml_Title>Sélectionner un fichier XML</win_sel_xml_Title>
 			<win_sel_system_text>Merci de sélectionner un systéme</win_sel_system_text>
 			<win_sel_system_button>Sélectionner</win_sel_system_button>
 		</win_sel_system>

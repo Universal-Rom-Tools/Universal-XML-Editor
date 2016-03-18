@@ -115,6 +115,7 @@ $F_UniversalEditor = GUICreate(_MultiLang_GetText("main_gui"), 798, 601, 192, 12
 GUISetBkColor(0x34495c, $F_UniversalEditor)
 Local $MF = GUICtrlCreateMenu(_MultiLang_GetText("mnu_file"))
 Local $MF_Profil = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_file_profil"), $MF)
+Local $MF_XML = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_file_xml"), $MF)
 Local $MF_Separation = GUICtrlCreateMenuItem("", $MF)
 Local $MF_Exit = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_file_exit"), $MF)
 Local $ME = GUICtrlCreateMenu(_MultiLang_GetText("mnu_edit"))
@@ -166,6 +167,18 @@ While 1
 			$sMsg &= "http://www.emulationstation.org/" & @CRLF
 			_ExtMsgBoxSet(1, 2, 0x34495c, 0xFFFF00, 10, "Arial")
 			_ExtMsgBox($EMB_ICONINFO, "OK", _MultiLang_GetText("win_About_Title"), $sMsg, 15)
+		Case $MF_XML ;Menu Fichier/Charger le fichier XML
+			_GUIListViewEx_Close(0)
+			_GUICtrlListView_DeleteAllItems($H_LV_ROMLIST)
+			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
+			Local $V_XMLPath = FileOpenDialog(_MultiLang_GetText("win_sel_xml_Title"), "c:\", 'XML (*.xml)', $FD_FILEMUSTEXIST, "gamelist.xml")
+			$A_ROMList = _ROM_CREATEARRAY($V_XMLPath)
+;~ 			For $B_ROMList = 0 To UBound($A_ROMList) - 1
+;~ 				_GUICtrlListView_AddItem($H_LV_ROMLIST, $A_ROMList[$B_ROMList])
+;~ 			Next
+;~ 			$I_LV_ATTRIBUTE = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, True)
+;~ 			_GUIListViewEx_MsgRegister() ;Register pour le drag&drop
+;~ 			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
 	EndSwitch
 WEnd
 
@@ -445,3 +458,30 @@ Func _PROFIL_SelectGUI($A_Profil)
 	WinActivate($F_UniversalEditor)
 	Return 1
 EndFunc   ;==>_PROFIL_SelectGUI
+
+Func _ROM_CREATEARRAY($V_XMLPath)
+	_XMLFileOpen($V_XMLPath)
+	If @error Then
+		ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
+		FileDelete($PathTmp)
+		Return -1
+	EndIf
+
+	Local $A_Nodes = _XMLGetChildNodes('//gameList')
+	If @error Then
+		ConsoleWrite("!__XMLGetChildNodes : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
+		FileDelete($PathTmp)
+		Return -1
+	EndIf
+
+	For $B_Nodes = 1 To UBound($A_Nodes) - 1
+		Local $sNode_Values = _XMLGetValue("//gameList/*[" & $B_Nodes & "]/" )
+		If IsArray($sNode_Values) Then $A_XMLSources[$TMP_LastUbound][$B_XMLElements - 1] = StringUpper($sNode_Values[1])
+	Next
+
+
+	_ArrayDisplay($A_ROMList, '$A_ROMList') ; Debug
+
+	Return $A_ROMList
+EndFunc   ;==>_ROM_CREATEARRAY
+
