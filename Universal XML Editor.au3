@@ -128,10 +128,10 @@ Local $MP_POWEROFF = GUICtrlCreateMenuItem("Power off", $MP)
 GUICtrlSetState($MP, $GUI_DISABLE)
 Local $MH = GUICtrlCreateMenu(_MultiLang_GetText("mnu_help"))
 Local $MH_Help = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_help_about"), $MH)
-Local $H_LV_ROMLIST = GUICtrlCreateListView("", 3, 122, 226, 430, $LVS_SHOWSELALWAYS)
+Local $H_LV_ROMLIST = GUICtrlCreateListView("Roms", 3, 122, 226, 430, $LVS_SHOWSELALWAYS)
 _GUICtrlListView_SetExtendedListViewStyle($H_LV_ROMLIST, $LVS_EX_FULLROWSELECT)
 _GUICtrlListView_SetColumnWidth($H_LV_ROMLIST, 0, 206)
-Local $H_LV_ATTRIBUT = GUICtrlCreateListView("", 232, 4, 562, 548, $LVS_SHOWSELALWAYS)
+Local $H_LV_ATTRIBUT = GUICtrlCreateListView("Attributs|Valeurs", 232, 4, 562, 548, $LVS_SHOWSELALWAYS)
 _GUICtrlListView_SetExtendedListViewStyle($H_LV_ATTRIBUT, $LVS_EX_FULLROWSELECT)
 _GUICtrlListView_SetColumnWidth($H_LV_ATTRIBUT, 0, 313)
 Local $P_CIBLE = GUICtrlCreatePic($INI_P_CIBLE, 18, 8, 196, 100)
@@ -172,13 +172,18 @@ While 1
 			_GUICtrlListView_DeleteAllItems($H_LV_ROMLIST)
 			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
 			Local $V_XMLPath = FileOpenDialog(_MultiLang_GetText("win_sel_xml_Title"), "c:\", 'XML (*.xml)', $FD_FILEMUSTEXIST, "gamelist.xml")
-			$A_ROMList = _ROM_CREATEARRAY($V_XMLPath)
-;~ 			For $B_ROMList = 0 To UBound($A_ROMList) - 1
-;~ 				_GUICtrlListView_AddItem($H_LV_ROMLIST, $A_ROMList[$B_ROMList])
-;~ 			Next
-;~ 			$I_LV_ATTRIBUTE = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, True)
+			$A_XMLFormat = _XML_CREATEFORMAT($A_Profil[$No_Profil], $PathConfigINI)
+			$A_ROMList = _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
+			For $B_ROMList = 0 To UBound($A_ROMList) - 1
+				_GUICtrlListView_AddItem($H_LV_ROMLIST, $A_ROMList[$B_ROMList][2])
+			Next
+			$I_LV_ATTRIBUTE = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, True)
 ;~ 			_GUIListViewEx_MsgRegister() ;Register pour le drag&drop
 ;~ 			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
+		Case $H_LV_ROMLIST
+			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
+			$A_Selected = _GUICtrlListView_GetSelectedIndices($H_LV_ROMLIST, True)
+			ConsoleWrite("nb de selectionné : " & $A_Selected[0] & " - 1 er : " & $A_Selected[1] & " - Dernier : " & $A_Selected[$A_Selected[0]] & @CRLF)
 	EndSwitch
 WEnd
 
@@ -317,7 +322,7 @@ Func _INI_CREATEARRAY_EDITOR()
 		$B_Profils = $B_Profils + 1
 	WEnd
 	_CREATION_LOGMESS("Recuperation des Profil")
-	_ArrayDisplay($A_Profil, '$A_Profil') ; Debug
+;~ 	_ArrayDisplay($A_Profil, '$A_Profil') ; Debug
 	Return $A_Profil
 EndFunc   ;==>_INI_CREATEARRAY_EDITOR
 
@@ -459,7 +464,33 @@ Func _PROFIL_SelectGUI($A_Profil)
 	Return 1
 EndFunc   ;==>_PROFIL_SelectGUI
 
-Func _ROM_CREATEARRAY($V_XMLPath)
+Func _XML_CREATEFORMAT($Profil, $PathConfigINI)
+	Local $A_XMLFormat[1][2]
+	Local $B_Elements = 1
+	_CREATION_LOGMESS("Recuperation des champs du profil")
+	While IniRead($PathConfigINI, $Profil, "$ELEMENT_" & $B_Elements, "Ending") <> "Ending"
+		_ArrayAdd($A_XMLFormat, IniRead($PathConfigINI, $Profil, "$ELEMENT_" & $B_Elements, ""))
+		$B_Elements = $B_Elements + 1
+	WEnd
+;~ 	_ArrayDisplay($A_XMLFormat, '$A_XMLFormat') ; Debug
+	Return $A_XMLFormat
+EndFunc   ;==>_XML_CREATEFORMAT
+
+Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
+	Local $Nb_XMLElements = UBound($A_XMLFormat) - 1
+	Local $xpath_root, $xpath_child, $xpath_Unique
+
+	For $B_XMLElements = 0 To $Nb_XMLElements - 1
+		If $A_XMLFormat[$B_XMLElements][1] = "root" Then Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
+		If $A_XMLFormat[$B_XMLElements][1] = "child" Then Local $xpath_child = "/" & $A_XMLFormat[$B_XMLElements][0]
+		If $A_XMLFormat[$B_XMLElements][1] = "path:rom" Then Local $xpath_Unique = "/" & $A_XMLFormat[$B_XMLElements][0]
+
+	Next
+
+	ConsoleWrite("$xpath_root : " & $xpath_root & @CRLF) ; Debug
+	ConsoleWrite("$xpath_child : " & $xpath_root & $xpath_child & @CRLF) ; Debug
+	ConsoleWrite("$xpath_Unique : " & $xpath_root & $xpath_child & $xpath_Unique & @CRLF) ; Debug
+
 	_XMLFileOpen($V_XMLPath)
 	If @error Then
 		ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
@@ -467,21 +498,37 @@ Func _ROM_CREATEARRAY($V_XMLPath)
 		Return -1
 	EndIf
 
-	Local $A_Nodes = _XMLGetChildNodes('//gameList')
+	Local $A_Nodes = _XMLGetChildNodes($xpath_root)
 	If @error Then
 		ConsoleWrite("!__XMLGetChildNodes : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
 		FileDelete($PathTmp)
 		Return -1
 	EndIf
 
+	Dim $A_ROMList[UBound($A_Nodes)][3]
+
 	For $B_Nodes = 1 To UBound($A_Nodes) - 1
-		Local $sNode_Values = _XMLGetValue("//gameList/*[" & $B_Nodes & "]/" )
-		If IsArray($sNode_Values) Then $A_XMLSources[$TMP_LastUbound][$B_XMLElements - 1] = StringUpper($sNode_Values[1])
+		Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $B_Nodes & "]" & $xpath_Unique)
+		If IsArray($sNode_Values) Then
+			$A_ROMList[$B_Nodes][0] = $sNode_Values[1]
+			$sNode_Values_Temp = StringSplit($sNode_Values[1], '\')
+			If $sNode_Values_Temp[0] <= 1 Then
+				$sNode_Values_Temp = StringSplit($sNode_Values[1], '/')
+				For $B_sNode_Values_Temp = 1 To $sNode_Values_Temp[0] - 1
+					$A_ROMList[$B_Nodes][1] = $A_ROMList[$B_Nodes][1] & $sNode_Values_Temp[$B_sNode_Values_Temp] & '/'
+				Next
+			Else
+				For $B_sNode_Values_Temp = 1 To $sNode_Values_Temp[0] - 1
+					$A_ROMList[$B_Nodes][1] = $A_ROMList[$B_Nodes][1] & $sNode_Values_Temp[$B_sNode_Values_Temp] & '\'
+				Next
+			EndIf
+;~ 			_ArrayDisplay($sNode_Values_Temp, '$sNode_Values_Temp') ; Debug
+			$A_ROMList[$B_Nodes][1] = StringTrimRight($A_ROMList[$B_Nodes][0], StringLen($sNode_Values_Temp[$sNode_Values_Temp[0]]))
+			$A_ROMList[$B_Nodes][2] = $sNode_Values_Temp[$sNode_Values_Temp[0]]
+		EndIf
 	Next
-
-
-	_ArrayDisplay($A_ROMList, '$A_ROMList') ; Debug
-
+	_ArrayDelete($A_ROMList, "0")
+;~ 	_ArrayDisplay($A_ROMList, '$A_ROMList') ; Debug
 	Return $A_ROMList
 EndFunc   ;==>_ROM_CREATEARRAY
 
