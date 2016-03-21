@@ -1,14 +1,12 @@
 <progressbar>
-	<prSET_ROM_CREATEARRAY>Calcul des HASH</prSET_ROM_CREATEARRAY>
-	<prSET_XML_CREATEROM>Création du fichier XML</prSET_XML_CREATEROM>
-	<prSET_SYSTEM_CREATEARRAY>Récupération de la liste des systèmes</prSET_SYSTEM_CREATEARRAY>
 </progressbar>
 
 <gui>
-	<main_gui>Universale XML Scraper</main_gui>
+	<main_gui>Universale XML Editor</main_gui>
 	<menu>
 		<mnu_file>Fichier</mnu_file>
 		<mnu_file_profil>Charger un profil</mnu_file_profil>
+		<mnu_file_xml>Charger un fichier XML</mnu_file_xml>
 		<mnu_file_exit>Quitter</mnu_file_exit>
 		<mnu_edit>Edition</mnu_edit>
 		<mnu_edit_langue>Changer de langue</mnu_edit_langue>
@@ -17,8 +15,8 @@
 		<mnu_help_about>A propos</mnu_help_about>
 	</menu>
 	<windows>
-		<scrap_button>Scraper</scrap_button>
-		<scrap_cancel_button>Annuler</scrap_cancel_button>
+		<lv_roms>Roms</lv_roms>
+		<lv_attributs>Attributs|Valeurs</lv_attributs>
 		<win_sel_langue>
 			<win_sel_langue_Title>Sélectionner une langue</win_sel_langue_Title>
 			<win_sel_langue_text>Merci de sélectionner une langue</win_sel_langue_text>
@@ -29,11 +27,6 @@
 			<win_sel_profil_text>Merci de sélectionner un profil</win_sel_profil_text>
 			<win_sel_profil_button>Sélectionner</win_sel_profil_button>
 		</win_sel_profil>
-		<win_sel_system>
-			<win_sel_xml_Title>Sélectionner un fichier XML</win_sel_xml_Title>
-			<win_sel_system_text>Merci de sélectionner un systéme</win_sel_system_text>
-			<win_sel_system_button>Sélectionner</win_sel_system_button>
-		</win_sel_system>
 		<win_config>
 			<win_config_Title>Configuration</win_config_Title>
 			<win_config_GroupScrap>Scraper</win_config_GroupScrap>
@@ -57,15 +50,4 @@
 		<win_About_By>Auteur : Screech</win_About_By>
 		<win_About_Thanks>Remerciement à :</win_About_Thanks>
 	</win_About>
-	<win_Datas>
-		<win_Datas_Title>Compte rendu</win_Datas_Title>
-		<win_Datas_Text>Scrape Terminé</win_Datas_Text>
-		<win_Datas_Roms>Nombre de Roms : </win_Datas_Roms>
-		<win_Datas_MoyTime>Temp moyen par Roms : </win_Datas_MoyTime>
-		<win_Datas_FullTime>Temp Total du Scrape : </win_Datas_FullTime>
-	</win_Datas>
-	<win_Cancel>
-		<win_Cancel_Title>Scrape Annulé</win_Cancel_Title>
-		<win_Cancel_Text>Scrape Annulé</win_Cancel_Text>
-	</win_Cancel>
 </windows>

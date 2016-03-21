@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Description=Editeur XML Universel
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.1
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_LegalCopyright=LEGRAS David
 #AutoIt3Wrapper_Res_Language=1036
@@ -39,6 +39,7 @@
 #include <MsgBoxConstants.au3>
 #include <Color.au3>
 #include <Crypt.au3>
+#include <GuiListView.au3>
 
 #include "./Include/_MultiLang.au3"
 #include "./Include/_ExtMsgBox.au3"
@@ -62,6 +63,11 @@ DirCreate($SOURCE_DIRECTORY & "\Ressources")
 FileInstall(".\UXE-config.ini", $SOURCE_DIRECTORY & "\UXE-config.ini")
 FileInstall(".\LanguageFiles\UXE-ENGLISH.XML", $SOURCE_DIRECTORY & "\LanguageFiles\UXE-ENGLISH.XML")
 FileInstall(".\LanguageFiles\UXE-FRENCH.XML", $SOURCE_DIRECTORY & "\LanguageFiles\UXE-FRENCH.XML")
+FileInstall(".\Ressources\RecalboxV3.jpg", $SOURCE_DIRECTORY & "\Ressources\RecalboxV3.jpg")
+FileInstall(".\Ressources\RecalboxV4.jpg", $SOURCE_DIRECTORY & "\Ressources\RecalboxV4.jpg")
+FileInstall(".\Ressources\Recalbox.jpg", $SOURCE_DIRECTORY & "\Ressources\Recalbox.jpg")
+FileInstall(".\Ressources\Hyperspin.jpg", $SOURCE_DIRECTORY & "\Ressources\Hyperspin.jpg")
+FileInstall(".\Ressources\Emulationstation.jpg", $SOURCE_DIRECTORY & "\Ressources\Emulationstation.jpg")
 FileInstall(".\Ressources\plink.exe", $SOURCE_DIRECTORY & "\Ressources\plink.exe")
 FileInstall(".\Ressources\empty.jpg", $SOURCE_DIRECTORY & "\Ressources\empty.jpg")
 
@@ -91,7 +97,7 @@ Global $LargeurImage = IniRead($PathConfigINI, "LAST_USE", "$LargeurImage", "")
 Global $TMP_LastChild = ''
 Global $DevId = BinaryToString(_Crypt_DecryptData("0x1552EDED2FA9B5", "1gdf1g1gf", $CALG_RC4))
 Global $DevPassword = BinaryToString(_Crypt_DecryptData("0x1552EDED2FA9B547FBD0D9A623D954AE7BEDC681", "1gdf1g1gf", $CALG_RC4))
-Global $Rev
+Global $Rev, $RomSelected = "", $RomLoaded = 0
 If @Compiled Then
 	$Rev = "BETA " & FileGetVersion(@ScriptFullPath)
 Else
@@ -128,10 +134,12 @@ Local $MP_POWEROFF = GUICtrlCreateMenuItem("Power off", $MP)
 GUICtrlSetState($MP, $GUI_DISABLE)
 Local $MH = GUICtrlCreateMenu(_MultiLang_GetText("mnu_help"))
 Local $MH_Help = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_help_about"), $MH)
-Local $H_LV_ROMLIST = GUICtrlCreateListView("Roms", 3, 122, 226, 430, $LVS_SHOWSELALWAYS)
+Local $H_LV_ROMLIST = GUICtrlCreateListView(_MultiLang_GetText("lv_roms"), 3, 122, 226, 430, $LVS_SHOWSELALWAYS)
+;~ Local $H_LV_ROMLIST = _GUICtrlListView_Create($F_UniversalEditor, "Roms", 3, 122, 226, 430, BitOR($WS_HSCROLL, $WS_VSCROLL, $WS_BORDER, $LVS_REPORT, $LVS_NOCOLUMNHEADER), 0)
 _GUICtrlListView_SetExtendedListViewStyle($H_LV_ROMLIST, $LVS_EX_FULLROWSELECT)
 _GUICtrlListView_SetColumnWidth($H_LV_ROMLIST, 0, 206)
-Local $H_LV_ATTRIBUT = GUICtrlCreateListView("Attributs|Valeurs", 232, 4, 562, 548, $LVS_SHOWSELALWAYS)
+Local $H_LV_ATTRIBUT = GUICtrlCreateListView(_MultiLang_GetText("lv_attributs"), 232, 4, 562, 548, $LVS_SHOWSELALWAYS)
+;~ Local $H_LV_ATTRIBUT = _GUICtrlListView_Create($F_UniversalEditor, "Attributs|Valeurs", 232, 4, 562, 548, BitOR($WS_HSCROLL, $WS_VSCROLL, $WS_BORDER, $LVS_REPORT, $LVS_NOCOLUMNHEADER), 0)
 _GUICtrlListView_SetExtendedListViewStyle($H_LV_ATTRIBUT, $LVS_EX_FULLROWSELECT)
 _GUICtrlListView_SetColumnWidth($H_LV_ATTRIBUT, 0, 313)
 Local $P_CIBLE = GUICtrlCreatePic($INI_P_CIBLE, 18, 8, 196, 100)
@@ -153,6 +161,29 @@ While 1
 			$No_Profil = _PROFIL_SelectGUI($A_Profil)
 			$INI_P_CIBLE = IniRead($PathConfigINI, $A_Profil[$No_Profil], "$IMAGE_CIBLE", "empty.jpg")
 			_CREATION_LOGMESS("Profil : " & $A_Profil[$No_Profil])
+			$RomLoaded = 0
+			_GUIListViewEx_Close(0)
+			_GUICtrlListView_DeleteAllItems($H_LV_ROMLIST)
+			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
+			_GUI_REFRESH($INI_P_CIBLE)
+		Case $MP_KILLALL
+			If MsgBox($MB_OKCANCEL, "KillAll Emulationstation", "Etes vous sur de vouloir arreter EmulationStation ?") = $IDOK Then
+				Run($PathPlink & $Plink_IP & " -l " & $Plink_root & " -pw " & $Plink_mdp & " killall emulationstation")
+				_CREATION_LOGMESS("SSH : KillAll Emulationstation")
+			EndIf
+		Case $MP_REBOOT
+			If MsgBox($MB_OKCANCEL, "Reboot", "Etes vous sur de vouloir Rebooter la machine distante ?") = $IDOK Then
+				Run($PathPlink & $Plink_IP & " -l " & $Plink_root & " -pw " & $Plink_mdp & " /sbin/reboot")
+				_CREATION_LOGMESS("SSH : Reboot")
+			EndIf
+		Case $MP_POWEROFF
+			If MsgBox($MB_OKCANCEL, "Power Off", "Etes vous sur de vouloir ArrÃªter la machine distante ?") = $IDOK Then
+				Run($PathPlink & $Plink_IP & " -l " & $Plink_root & " -pw " & $Plink_mdp & " /sbin/poweroff")
+				_CREATION_LOGMESS("SSH : Power Off")
+			EndIf
+		Case $ME_Langue
+			_LANG_LOAD($LANG_DIR, -1)
+			_CREATION_LOGMESS("Langue Selectionnee : " & $user_lang)
 			_GUI_REFRESH($INI_P_CIBLE)
 		Case $ME_Config
 			_GUI_Config()
@@ -168,6 +199,7 @@ While 1
 			_ExtMsgBoxSet(1, 2, 0x34495c, 0xFFFF00, 10, "Arial")
 			_ExtMsgBox($EMB_ICONINFO, "OK", _MultiLang_GetText("win_About_Title"), $sMsg, 15)
 		Case $MF_XML ;Menu Fichier/Charger le fichier XML
+			$RomLoaded = 1
 			_GUIListViewEx_Close(0)
 			_GUICtrlListView_DeleteAllItems($H_LV_ROMLIST)
 			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
@@ -177,14 +209,36 @@ While 1
 			For $B_ROMList = 0 To UBound($A_ROMList) - 1
 				_GUICtrlListView_AddItem($H_LV_ROMLIST, $A_ROMList[$B_ROMList][2])
 			Next
-			$I_LV_ATTRIBUTE = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, True)
-;~ 			_GUIListViewEx_MsgRegister() ;Register pour le drag&drop
-;~ 			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
-		Case $H_LV_ROMLIST
+			$I_LV_ROMLIST = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, False, 720)
+			_GUIListViewEx_MsgRegister(True, False, False, True) ;Register sans drag&drop
 			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
-			$A_Selected = _GUICtrlListView_GetSelectedIndices($H_LV_ROMLIST, True)
-			ConsoleWrite("nb de selectionné : " & $A_Selected[0] & " - 1 er : " & $A_Selected[1] & " - Dernier : " & $A_Selected[$A_Selected[0]] & @CRLF)
 	EndSwitch
+	If $RomLoaded = 1 Then
+		If $aGLVEx_Data[1][20] <> $RomSelected Then
+			$RomSelected = $aGLVEx_Data[1][20]
+			ConsoleWrite($aGLVEx_Data[1][20] & @CRLF) ; Debug
+			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
+			$A_XMLList = _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
+			For $B_XMLList = 0 To UBound($A_XMLList) - 1
+				_GUICtrlListView_AddItem($H_LV_ATTRIBUT, $A_XMLList[$B_XMLList][0])
+				_GUICtrlListView_AddSubItem($H_LV_ATTRIBUT, $B_XMLList, $A_XMLList[$B_XMLList][1], 1)
+			Next
+			_GUICtrlListView_SetColumnWidth($H_LV_ATTRIBUT, 0, $LVSCW_AUTOSIZE)
+			_GUICtrlListView_SetColumnWidth($H_LV_ATTRIBUT, 1, 535 - _GUICtrlListView_GetColumnWidth($H_LV_ATTRIBUT, 0))
+			$I_LV_ATTRIBUT = _GUIListViewEx_Init($H_LV_ATTRIBUT, $A_XMLList, 0, 0, False, 2, "1")
+		EndIf
+	EndIf
+	$aRet = _GUIListViewEx_EditOnClick() ; Use combos to change EditMode
+	; Array only returned AFTER EditOnClick process - so check array exists
+	If IsArray($aRet) Then
+		; Uncomment to see returned array
+		$I_AttribSelected = $aGLVEx_Data[2][20]
+		$V_AttribSelected = _GUICtrlListView_GetItem($H_LV_ATTRIBUT, $I_AttribSelected)
+		$V_AttribSelected_Value = _GUICtrlListView_GetItem($H_LV_ATTRIBUT, $I_AttribSelected, 1)
+		ConsoleWrite($V_AttribSelected[3] & ' - ' & $V_AttribSelected_Value[3] & @CRLF)
+		_XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $RomSelected, $V_AttribSelected[3], $V_AttribSelected_Value[3])
+;~ 		_ArrayDisplay($aRet, @error)
+	EndIf
 WEnd
 
 ;---------;
@@ -210,6 +264,7 @@ Func _GUI_REFRESH($INI_P_CIBLE, $ScrapIP = 0)
 	GUICtrlSetData($MF, _MultiLang_GetText("mnu_file"))
 	GUICtrlSetState($MF, $GUI_ENABLE)
 	GUICtrlSetData($MF_Profil, _MultiLang_GetText("mnu_file_profil"))
+	GUICtrlSetData($MF_XML, _MultiLang_GetText("mnu_file_xml"))
 	GUICtrlSetData($MF_Exit, _MultiLang_GetText("mnu_file_exit"))
 	GUICtrlSetData($ME, _MultiLang_GetText("mnu_edit"))
 	GUICtrlSetState($ME, $GUI_ENABLE)
@@ -219,6 +274,8 @@ Func _GUI_REFRESH($INI_P_CIBLE, $ScrapIP = 0)
 	GUICtrlSetState($MH, $GUI_ENABLE)
 	GUICtrlSetData($MH_Help, _MultiLang_GetText("mnu_help_about"))
 	GUICtrlSetImage($P_CIBLE, $SOURCE_DIRECTORY & "\Ressources\" & $INI_P_CIBLE)
+	GUICtrlSetData($H_LV_ROMLIST, _MultiLang_GetText("lv_roms"))
+	GUICtrlSetData($H_LV_ATTRIBUT, _MultiLang_GetText("lv_attributs"))
 	_GUICtrlStatusBar_SetText($SB_EDITOR, "")
 	Return
 EndFunc   ;==>_GUI_REFRESH
@@ -335,7 +392,7 @@ Func _LANG_LOAD($LANG_DIR, $user_lang)
 	Local $LANGFILES[2][3]
 
 	$LANGFILES[0][0] = "English (US)" ;
-	$LANGFILES[0][1] = $LANG_DIR & "\UXS-ENGLISH.XML"
+	$LANGFILES[0][1] = $LANG_DIR & "\UXE-ENGLISH.XML"
 	$LANGFILES[0][2] = "0409 " & _ ;English_United_States
 			"0809 " & _ ;English_United_Kingdom
 			"0c09 " & _ ;English_Australia
@@ -350,8 +407,8 @@ Func _LANG_LOAD($LANG_DIR, $user_lang)
 			"3009 " & _ ;English_Zimbabwe
 			"3409" ;English_Philippines
 
-	$LANGFILES[1][0] = "Français" ; French
-	$LANGFILES[1][1] = $LANG_DIR & "\UXS-FRENCH.XML"
+	$LANGFILES[1][0] = "Francais" ; French
+	$LANGFILES[1][1] = $LANG_DIR & "\UXE-FRENCH.XML"
 	$LANGFILES[1][2] = "040c " & _ ;French_Standard
 			"080c " & _ ;French_Belgian
 			"0c0c " & _ ;French_Canadian
@@ -494,14 +551,12 @@ Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 	_XMLFileOpen($V_XMLPath)
 	If @error Then
 		ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
-		FileDelete($PathTmp)
 		Return -1
 	EndIf
 
 	Local $A_Nodes = _XMLGetChildNodes($xpath_root)
 	If @error Then
 		ConsoleWrite("!__XMLGetChildNodes : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
-		FileDelete($PathTmp)
 		Return -1
 	EndIf
 
@@ -532,3 +587,66 @@ Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 	Return $A_ROMList
 EndFunc   ;==>_ROM_CREATEARRAY
 
+Func _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
+	Local $Nb_XMLElements = UBound($A_XMLFormat) - 1
+	Local $xpath_root
+	Local $A_XMLFormat_TEMP[0]
+	_ArrayAdd($A_XMLFormat_TEMP, "")
+
+	For $B_XMLElements = 0 To $Nb_XMLElements
+;~ 		If $A_XMLFormat[$B_XMLElements][1] = "root" Then Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
+		Switch StringLeft($A_XMLFormat[$B_XMLElements][1], 5)
+			Case "root"
+				Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
+			Case "value"
+				_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0])
+			Case "path:"
+				_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0])
+		EndSwitch
+	Next
+;~ 	_ArrayDelete($A_XMLFormat_TEMP, 0)
+
+	ConsoleWrite("$xpath_root : " & $xpath_root & @CRLF) ; Debug
+
+	_XMLFileOpen($V_XMLPath)
+	If @error Then
+		ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
+		Return -1
+	EndIf
+
+	Dim $A_XMLList[UBound($A_XMLFormat_TEMP)][2]
+
+	For $B_Nodes = 1 To UBound($A_XMLFormat_TEMP) - 1
+		$A_XMLList[$B_Nodes][0] = $A_XMLFormat_TEMP[$B_Nodes]
+		Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $RomSelected + 1 & "]/" & $A_XMLFormat_TEMP[$B_Nodes])
+		If IsArray($sNode_Values) Then
+			ConsoleWrite($A_XMLFormat_TEMP[$B_Nodes] & "=" & $sNode_Values[1] & @CRLF);Debug
+			$A_XMLList[$B_Nodes][1] = $sNode_Values[1]
+		EndIf
+	Next
+	_ArrayDelete($A_XMLList, "0")
+;~ 	_ArrayDisplay($A_XMLList, '$A_XMLList') ; Debug
+	Return $A_XMLList
+EndFunc   ;==>_XML_CREATEARRAY
+
+Func _XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $RomSelected, $V_AttribSelected_TEMP, $V_AttribSelected_Value_TEMP)
+	Local $Nb_XMLElements = UBound($A_XMLFormat) - 1
+	Local $xpath_root
+	Local $A_XMLFormat_TEMP[0]
+
+	For $B_XMLElements = 0 To $Nb_XMLElements
+		If $A_XMLFormat[$B_XMLElements][1] = "root" Then Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
+	Next
+
+	ConsoleWrite("$xpath_root : " & $xpath_root & @CRLF) ; Debug
+
+	_XMLFileOpen($V_XMLPath)
+	If @error Then
+		ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
+		Return -1
+	EndIf
+
+	_XMLUpdateField($xpath_root & "/*[" & $RomSelected + 1 & "]/" & $V_AttribSelected_TEMP, $V_AttribSelected_Value_TEMP)
+
+	Return
+EndFunc   ;==>_XML_UPDATEINFO
