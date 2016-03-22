@@ -40,6 +40,7 @@
 #include <Color.au3>
 #include <Crypt.au3>
 #include <GuiListView.au3>
+#include <GDIPlus.au3>
 
 #include "./Include/_MultiLang.au3"
 #include "./Include/_ExtMsgBox.au3"
@@ -142,24 +143,25 @@ Local $H_LV_ATTRIBUT = GUICtrlCreateListView(_MultiLang_GetText("lv_attributs"),
 ;~ Local $H_LV_ATTRIBUT = _GUICtrlListView_Create($F_UniversalEditor, "Attributs|Valeurs", 232, 4, 562, 548, BitOR($WS_HSCROLL, $WS_VSCROLL, $WS_BORDER, $LVS_REPORT, $LVS_NOCOLUMNHEADER), 0)
 _GUICtrlListView_SetExtendedListViewStyle($H_LV_ATTRIBUT, $LVS_EX_FULLROWSELECT)
 _GUICtrlListView_SetColumnWidth($H_LV_ATTRIBUT, 0, 313)
-Local $P_CIBLE = GUICtrlCreatePic($INI_P_CIBLE, 18, 8, 196, 100)
+;~ Local $P_CIBLE = GUICtrlCreatePic($INI_P_CIBLE, 18, 8, 196, 100)
 Local $SB_EDITOR = _GUICtrlStatusBar_Create($F_UniversalEditor)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
 ; Initialisation interface
 Local $A_Profil = _INI_CREATEARRAY_EDITOR()
-Local $INI_P_CIBLE = IniRead($PathConfigINI, $A_Profil[$No_Profil], "$IMAGE_CIBLE", "empty.jpg")
+Local $INI_P_CIBLE = $SOURCE_DIRECTORY & "\Ressources\" & IniRead($PathConfigINI, $A_Profil[$No_Profil], "$IMAGE_CIBLE", "empty.jpg")
 _GUI_REFRESH($INI_P_CIBLE)
 
 While 1
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $MF_Exit
+			_GDIPlus_Shutdown()
 			Exit
 		Case $MF_Profil
 			$No_Profil = _PROFIL_SelectGUI($A_Profil)
-			$INI_P_CIBLE = IniRead($PathConfigINI, $A_Profil[$No_Profil], "$IMAGE_CIBLE", "empty.jpg")
+			$INI_P_CIBLE = $SOURCE_DIRECTORY & "\Ressources\" & IniRead($PathConfigINI, $A_Profil[$No_Profil], "$IMAGE_CIBLE", "empty.jpg")
 			_CREATION_LOGMESS("Profil : " & $A_Profil[$No_Profil])
 			$RomLoaded = 0
 			_GUIListViewEx_Close(0)
@@ -212,6 +214,7 @@ While 1
 			$I_LV_ROMLIST = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, False, 720)
 			_GUIListViewEx_MsgRegister(True, False, False, True) ;Register sans drag&drop
 			_GUIListViewEx_SetActive(1) ;Activation de la LV de gauche
+			_GUI_REFRESH($INI_P_CIBLE)
 	EndSwitch
 	If $RomLoaded = 1 Then
 		If $aGLVEx_Data[1][20] <> $RomSelected Then
@@ -273,7 +276,36 @@ Func _GUI_REFRESH($INI_P_CIBLE, $ScrapIP = 0)
 	GUICtrlSetData($MH, _MultiLang_GetText("mnu_help"))
 	GUICtrlSetState($MH, $GUI_ENABLE)
 	GUICtrlSetData($MH_Help, _MultiLang_GetText("mnu_help_about"))
-	GUICtrlSetImage($P_CIBLE, $SOURCE_DIRECTORY & "\Ressources\" & $INI_P_CIBLE)
+
+	_GDIPlus_Startup()
+	$hImage = _GDIPlus_ImageLoadFromFile($INI_P_CIBLE)
+	$hGraphic = _GDIPlus_GraphicsCreateFromHWND($F_UniversalEditor)
+	$ImageWidth = _GDIPlus_ImageGetWidth($hImage)
+	$ImageHeight = _GDIPlus_ImageGetHeight($hImage)
+	If $ImageWidth > $ImageHeight Then
+		$NewImageWidth = 200
+		$NewImageHeight = Round(($ImageHeight * 200) / $ImageWidth)
+		If $NewImageHeight > 100 Then
+			$NewImageHeight = 100
+			$NewImageWidth = Round(($NewImageWidth * 100) / $NewImageHeight)
+		EndIf
+	Else
+		$NewImageHeight = 100
+		$NewImageWidth = Round(($ImageWidth * 100) / $NewImageHeight)
+		If $NewImageWidth > 200 Then
+			$NewImageWidth = 200
+			$NewImageHeight = Round(($NewImageWidth * 200) / $NewImageWidth)
+		EndIf
+	EndIf
+
+	$hImage = _GDIPlus_ImageResize($hImage, $NewImageWidth, $NewImageHeight)
+	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_UPDATENOW)
+	_GDIPlus_GraphicsDrawImage($hGraphic, $hImage, 18, 8)
+	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_VALIDATE)
+	_GDIPlus_GraphicsDispose($hGraphic)
+	_GDIPlus_ImageDispose($hImage)
+	_GDIPlus_Shutdown()
+
 	GUICtrlSetData($H_LV_ROMLIST, _MultiLang_GetText("lv_roms"))
 	GUICtrlSetData($H_LV_ATTRIBUT, _MultiLang_GetText("lv_attributs"))
 	_GUICtrlStatusBar_SetText($SB_EDITOR, "")
@@ -522,7 +554,7 @@ Func _PROFIL_SelectGUI($A_Profil)
 EndFunc   ;==>_PROFIL_SelectGUI
 
 Func _XML_CREATEFORMAT($Profil, $PathConfigINI)
-	Local $A_XMLFormat[1][2]
+	Local $A_XMLFormat[1][3]
 	Local $B_Elements = 1
 	_CREATION_LOGMESS("Recuperation des champs du profil")
 	While IniRead($PathConfigINI, $Profil, "$ELEMENT_" & $B_Elements, "Ending") <> "Ending"
@@ -540,7 +572,7 @@ Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 	For $B_XMLElements = 0 To $Nb_XMLElements - 1
 		If $A_XMLFormat[$B_XMLElements][1] = "root" Then Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
 		If $A_XMLFormat[$B_XMLElements][1] = "child" Then Local $xpath_child = "/" & $A_XMLFormat[$B_XMLElements][0]
-		If $A_XMLFormat[$B_XMLElements][1] = "path:rom" Then Local $xpath_Unique = "/" & $A_XMLFormat[$B_XMLElements][0]
+		If $A_XMLFormat[$B_XMLElements][2] = "unique" Then Local $xpath_Unique = "/" & $A_XMLFormat[$B_XMLElements][0]
 
 	Next
 
@@ -599,9 +631,13 @@ Func _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
 			Case "root"
 				Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
 			Case "value"
-				_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0])
+				_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0] & "    ")
 			Case "path:"
-				_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0])
+				If $A_XMLFormat[$B_XMLElements][2] = 'view' Then
+					_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0] & "view")
+				Else
+					_ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0] & "    ")
+				EndIf
 		EndSwitch
 	Next
 ;~ 	_ArrayDelete($A_XMLFormat_TEMP, 0)
@@ -617,11 +653,23 @@ Func _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
 	Dim $A_XMLList[UBound($A_XMLFormat_TEMP)][2]
 
 	For $B_Nodes = 1 To UBound($A_XMLFormat_TEMP) - 1
-		$A_XMLList[$B_Nodes][0] = $A_XMLFormat_TEMP[$B_Nodes]
-		Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $RomSelected + 1 & "]/" & $A_XMLFormat_TEMP[$B_Nodes])
+		$A_XMLList[$B_Nodes][0] = StringTrimRight($A_XMLFormat_TEMP[$B_Nodes], 4)
+		Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $RomSelected + 1 & "]/" & StringTrimRight($A_XMLFormat_TEMP[$B_Nodes], 4))
 		If IsArray($sNode_Values) Then
 			ConsoleWrite($A_XMLFormat_TEMP[$B_Nodes] & "=" & $sNode_Values[1] & @CRLF);Debug
 			$A_XMLList[$B_Nodes][1] = $sNode_Values[1]
+			If StringRight($A_XMLFormat_TEMP[$B_Nodes], 4) = 'view' Then
+
+				$TMP_Path = StringSplit($sNode_Values[1], "/")
+				If $TMP_Path[1] = "" Then $TMP_Path = StringSplit($sNode_Values[1], "\")
+;~ 				_ArrayDisplay($TMP_Path, "$TMP_Path")
+				$TMP_File = _ALLTRIM($TMP_Path[$TMP_Path[0]])
+				ConsoleWrite("-$TMP_File :" & $TMP_File & @CRLF)
+				Local $PathImageSub_Temp = $PathImage & $TMP_File
+				ConsoleWrite("+IMAGE :" & $PathImageSub_Temp & @CRLF)
+				_GUI_REFRESH($PathImageSub_Temp)
+			EndIf
+		Else
 		EndIf
 	Next
 	_ArrayDelete($A_XMLList, "0")
@@ -650,3 +698,4 @@ Func _XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $RomSelected, $V_AttribSelected_T
 
 	Return
 EndFunc   ;==>_XML_UPDATEINFO
+
