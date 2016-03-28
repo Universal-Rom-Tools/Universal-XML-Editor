@@ -76,6 +76,7 @@ FileInstall(".\Ressources\empty.jpg", $SOURCE_DIRECTORY & "\Ressources\empty.jpg
 ;-------------------------
 Global $LANG_DIR = $SOURCE_DIRECTORY & "\LanguageFiles"; Where we are storing the language files.
 Global $INI_P_CIBLE = $SOURCE_DIRECTORY & "\Ressources\empty.jpg"
+Global $Empty_Image = $SOURCE_DIRECTORY & "\Ressources\empty.jpg"
 Global $PathTmp = $SOURCE_DIRECTORY & "\API_temp.tmp"
 Global $PathConfigINI = $SOURCE_DIRECTORY & "\UXE-config.ini"
 Global $PathPlink = $SOURCE_DIRECTORY & "\Ressources\plink.exe"
@@ -157,7 +158,6 @@ While 1
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $MF_Exit
-			_GDIPlus_Shutdown()
 			Exit
 		Case $MF_Profil
 			$No_Profil = _PROFIL_SelectGUI($A_Profil)
@@ -207,9 +207,10 @@ While 1
 			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
 			Local $V_XMLPath = FileOpenDialog(_MultiLang_GetText("win_sel_xml_Title"), "c:\", 'XML (*.xml)', $FD_FILEMUSTEXIST, "gamelist.xml")
 			$A_XMLFormat = _XML_CREATEFORMAT($A_Profil[$No_Profil], $PathConfigINI)
-			$A_ROMList = _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
+			Global $A_ROMList = _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 			For $B_ROMList = 0 To UBound($A_ROMList) - 1
 				_GUICtrlListView_AddItem($H_LV_ROMLIST, $A_ROMList[$B_ROMList][2])
+;~ 				_GUICtrlListView_AddSubItem($H_LV_ROMLIST, $B_ROMList, $A_ROMList[$B_ROMList][3], 1)
 			Next
 			$I_LV_ROMLIST = _GUIListViewEx_Init($H_LV_ROMLIST, $A_ROMList, 0, 0, False, 720)
 			_GUIListViewEx_MsgRegister(True, False, False, True) ;Register sans drag&drop
@@ -217,11 +218,12 @@ While 1
 			_GUI_REFRESH($INI_P_CIBLE)
 	EndSwitch
 	If $RomLoaded = 1 Then
-		If $aGLVEx_Data[1][20] <> $RomSelected Then
+		If $aGLVEx_Data[1][20] <> $RomSelected And $aGLVEx_Data[1][20] >= 0 Then
 			$RomSelected = $aGLVEx_Data[1][20]
-			ConsoleWrite($aGLVEx_Data[1][20] & @CRLF) ; Debug
+			$NoRomSelected = $A_ROMList[$RomSelected][3]
+			ConsoleWrite("Rom choisi n°" & $A_ROMList[$RomSelected][3] & @CRLF) ; Debug
 			_GUICtrlListView_DeleteAllItems($H_LV_ATTRIBUT)
-			$A_XMLList = _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
+			$A_XMLList = _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $NoRomSelected)
 			For $B_XMLList = 0 To UBound($A_XMLList) - 1
 				_GUICtrlListView_AddItem($H_LV_ATTRIBUT, $A_XMLList[$B_XMLList][0])
 				_GUICtrlListView_AddSubItem($H_LV_ATTRIBUT, $B_XMLList, $A_XMLList[$B_XMLList][1], 1)
@@ -239,7 +241,7 @@ While 1
 		$V_AttribSelected = _GUICtrlListView_GetItem($H_LV_ATTRIBUT, $I_AttribSelected)
 		$V_AttribSelected_Value = _GUICtrlListView_GetItem($H_LV_ATTRIBUT, $I_AttribSelected, 1)
 		ConsoleWrite($V_AttribSelected[3] & ' - ' & $V_AttribSelected_Value[3] & @CRLF)
-		_XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $RomSelected, $V_AttribSelected[3], $V_AttribSelected_Value[3])
+		_XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $NoRomSelected, $V_AttribSelected[3], $V_AttribSelected_Value[3])
 ;~ 		_ArrayDisplay($aRet, @error)
 	EndIf
 WEnd
@@ -263,6 +265,7 @@ Func _CREATION_LOGMESS($Mess)
 EndFunc   ;==>_CREATION_LOGMESS
 
 Func _GUI_REFRESH($INI_P_CIBLE, $ScrapIP = 0)
+;~ 	MsgBox(0, "$INI_P_CIBLE", $INI_P_CIBLE)
 	GUICtrlSetState($MP, $GUI_ENABLE)
 	GUICtrlSetData($MF, _MultiLang_GetText("mnu_file"))
 	GUICtrlSetState($MF, $GUI_ENABLE)
@@ -278,29 +281,33 @@ Func _GUI_REFRESH($INI_P_CIBLE, $ScrapIP = 0)
 	GUICtrlSetData($MH_Help, _MultiLang_GetText("mnu_help_about"))
 
 	_GDIPlus_Startup()
-	$hImage = _GDIPlus_ImageLoadFromFile($INI_P_CIBLE)
+
 	$hGraphic = _GDIPlus_GraphicsCreateFromHWND($F_UniversalEditor)
+	$hImage = _GDIPlus_ImageLoadFromFile($Empty_Image)
+	$hImage = _GDIPlus_ImageResize($hImage, 233, 121)
+	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_UPDATENOW)
+	_GDIPlus_GraphicsDrawImage($hGraphic, $hImage, 1, 1)
+	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_VALIDATE)
+;~ 	_GDIPlus_GraphicsDispose($hGraphic)
+	_GDIPlus_ImageDispose($hImage)
+
+;~ 	$hGraphic = _GDIPlus_GraphicsCreateFromHWND($F_UniversalEditor)
+	$hImage = _GDIPlus_ImageLoadFromFile($INI_P_CIBLE)
 	$ImageWidth = _GDIPlus_ImageGetWidth($hImage)
 	$ImageHeight = _GDIPlus_ImageGetHeight($hImage)
-	If $ImageWidth > $ImageHeight Then
-		$NewImageWidth = 200
-		$NewImageHeight = Round(($ImageHeight * 200) / $ImageWidth)
-		If $NewImageHeight > 100 Then
-			$NewImageHeight = 100
-			$NewImageWidth = Round(($NewImageWidth * 100) / $NewImageHeight)
-		EndIf
-	Else
+	$NewImageWidth = 200
+	$NewImageHeight = Round(($ImageHeight * 200) / $ImageWidth)
+	If $NewImageHeight > 100 Then
 		$NewImageHeight = 100
-		$NewImageWidth = Round(($ImageWidth * 100) / $NewImageHeight)
-		If $NewImageWidth > 200 Then
-			$NewImageWidth = 200
-			$NewImageHeight = Round(($NewImageWidth * 200) / $NewImageWidth)
-		EndIf
+		$NewImageWidth = Round(($ImageWidth * 100) / $ImageHeight)
 	EndIf
+
+	Local $Left = (233 / 2) - ($NewImageWidth / 2) + 1
+	Local $Top = (121 / 2) - ($NewImageHeight / 2) + 1
 
 	$hImage = _GDIPlus_ImageResize($hImage, $NewImageWidth, $NewImageHeight)
 	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_UPDATENOW)
-	_GDIPlus_GraphicsDrawImage($hGraphic, $hImage, 18, 8)
+	_GDIPlus_GraphicsDrawImage($hGraphic, $hImage, $Left, $Top)
 	_WinAPI_RedrawWindow($F_UniversalEditor, 0, 0, $RDW_VALIDATE)
 	_GDIPlus_GraphicsDispose($hGraphic)
 	_GDIPlus_ImageDispose($hImage)
@@ -592,7 +599,7 @@ Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 		Return -1
 	EndIf
 
-	Dim $A_ROMList[UBound($A_Nodes)][3]
+	Dim $A_ROMList[UBound($A_Nodes)][4]
 
 	For $B_Nodes = 1 To UBound($A_Nodes) - 1
 		Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $B_Nodes & "]" & $xpath_Unique)
@@ -612,9 +619,11 @@ Func _ROM_CREATEARRAY($V_XMLPath, $A_XMLFormat)
 ;~ 			_ArrayDisplay($sNode_Values_Temp, '$sNode_Values_Temp') ; Debug
 			$A_ROMList[$B_Nodes][1] = StringTrimRight($A_ROMList[$B_Nodes][0], StringLen($sNode_Values_Temp[$sNode_Values_Temp[0]]))
 			$A_ROMList[$B_Nodes][2] = $sNode_Values_Temp[$sNode_Values_Temp[0]]
+			$A_ROMList[$B_Nodes][3] = $B_Nodes - 1
 		EndIf
 	Next
 	_ArrayDelete($A_ROMList, "0")
+	_ArraySort($A_ROMList)
 ;~ 	_ArrayDisplay($A_ROMList, '$A_ROMList') ; Debug
 	Return $A_ROMList
 EndFunc   ;==>_ROM_CREATEARRAY
@@ -623,6 +632,7 @@ Func _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
 	Local $Nb_XMLElements = UBound($A_XMLFormat) - 1
 	Local $xpath_root
 	Local $A_XMLFormat_TEMP[0]
+	Local $PathImageSub_Temp = $INI_P_CIBLE
 	_ArrayAdd($A_XMLFormat_TEMP, "")
 
 	For $B_XMLElements = 0 To $Nb_XMLElements
@@ -667,11 +677,11 @@ Func _XML_CREATEARRAY($V_XMLPath, $A_XMLFormat, $RomSelected)
 				ConsoleWrite("-$TMP_File :" & $TMP_File & @CRLF)
 				Local $PathImageSub_Temp = $PathImage & $TMP_File
 				ConsoleWrite("+IMAGE :" & $PathImageSub_Temp & @CRLF)
-				_GUI_REFRESH($PathImageSub_Temp)
 			EndIf
 		Else
 		EndIf
 	Next
+	_GUI_REFRESH($PathImageSub_Temp)
 	_ArrayDelete($A_XMLList, "0")
 ;~ 	_ArrayDisplay($A_XMLList, '$A_XMLList') ; Debug
 	Return $A_XMLList
