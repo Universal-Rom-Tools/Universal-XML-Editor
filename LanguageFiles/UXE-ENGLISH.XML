@@ -9,6 +9,7 @@
 		<mnu_file_xml>Load XML File</mnu_file_xml>
 		<mnu_file_exit>Exit</mnu_file_exit>
 		<mnu_edit>Edit</mnu_edit>
+		<mnu_edit_replace>Replace</mnu_edit_replace>
 		<mnu_edit_langue>Change language</mnu_edit_langue>
 		<mnu_edit_config>Config</mnu_edit_config>
 		<mnu_help>Help</mnu_help>

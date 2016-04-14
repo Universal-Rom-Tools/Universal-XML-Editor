@@ -106,6 +106,8 @@ Else
 	$Rev = 'In Progress'
 EndIf
 
+Global $A_ROMList, $A_XMLFormat, $V_XMLPath
+
 ;---------;
 ;Principal;
 ;---------;
@@ -127,6 +129,8 @@ Local $MF_XML = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_file_xml"), $MF)
 Local $MF_Separation = GUICtrlCreateMenuItem("", $MF)
 Local $MF_Exit = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_file_exit"), $MF)
 Local $ME = GUICtrlCreateMenu(_MultiLang_GetText("mnu_edit"))
+Local $ME_Replace = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_edit_replace"), $ME)
+Local $ME_Separation = GUICtrlCreateMenuItem("", $ME)
 Local $ME_Langue = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_edit_langue"), $ME)
 Local $ME_Config = GUICtrlCreateMenuItem(_MultiLang_GetText("mnu_edit_config"), $ME)
 Local $MP = GUICtrlCreateMenu("SSH")
@@ -182,6 +186,11 @@ While 1
 			If MsgBox($MB_OKCANCEL, "Power Off", "Etes vous sur de vouloir ArrÃªter la machine distante ?") = $IDOK Then
 				Run($PathPlink & $Plink_IP & " -l " & $Plink_root & " -pw " & $Plink_mdp & " /sbin/poweroff")
 				_CREATION_LOGMESS("SSH : Power Off")
+			EndIf
+		Case $ME_Replace
+			If $RomLoaded = 1 Then
+				_EDIT_REPLACE($A_ROMList, $A_XMLFormat, $V_XMLPath)
+				$RomSelected = 1
 			EndIf
 		Case $ME_Langue
 			_LANG_LOAD($LANG_DIR, -1)
@@ -704,8 +713,80 @@ Func _XML_UPDATEINFO($V_XMLPath, $A_XMLFormat, $RomSelected, $V_AttribSelected_T
 		Return -1
 	EndIf
 
-	_XMLUpdateField($xpath_root & "/*[" & $RomSelected + 1 & "]/" & $V_AttribSelected_TEMP, $V_AttribSelected_Value_TEMP)
+	$Result = _XMLUpdateField($xpath_root & "/*[" & $RomSelected + 1 & "]/" & $V_AttribSelected_TEMP, $V_AttribSelected_Value_TEMP)
+	If $Result = -1 Then _XMLCreateChildNode($xpath_root & "/*[" & $RomSelected + 1 & "]", $V_AttribSelected_TEMP, $V_AttribSelected_Value_TEMP)
 
 	Return
 EndFunc   ;==>_XML_UPDATEINFO
+
+Func _EDIT_REPLACE($A_ROMList, $A_XMLFormat, $V_XMLPath)
+	GUISetState(@SW_DISABLE, $F_UniversalEditor)
+	Local $Nb_XMLElements = UBound($A_XMLFormat) - 1
+	Local $xpath_root
+	Local $A_XMLFormat_TEMP[0]
+	_ArrayAdd($A_XMLFormat_TEMP, "")
+
+;~ 	_ArrayDisplay($A_XMLFormat, '$A_XMLFormat') ; Debug
+
+	Local $_edit_replace_attribut_gui_GUI = GUICreate(_MultiLang_GetText("win_replace_Title"), 230, 220)
+	Local $_edit_replace_attribut_gui_ComboLabel = GUICtrlCreateLabel(_MultiLang_GetText("win_replace_text"), 8, 8, 212, 33)
+	Local $_edit_replace_attribut_gui_Combo = GUICtrlCreateCombo("(" & _MultiLang_GetText("win_replace_Title") & ")", 8, 48, 209, 25, BitOR($CBS_DROPDOWNLIST, $CBS_AUTOHSCROLL))
+	Local $_edit_replace_attribut_gui_SourceLabel = GUICtrlCreateLabel(_MultiLang_GetText("win_replace_source"), 8, 72, 212, 17)
+	Local $_edit_replace_attribut_gui_SourceInput = GUICtrlCreateInput("", 8, 96, 209, 21)
+	Local $_edit_replace_attribut_gui_CibleLabel = GUICtrlCreateLabel(_MultiLang_GetText("win_replace_cible"), 8, 120, 212, 17)
+	Local $_edit_replace_attribut_gui_CibleInput = GUICtrlCreateInput("", 8, 144, 209, 21)
+	Local $_edit_replace_attribut_gui_ReplaceButton = GUICtrlCreateButton(_MultiLang_GetText("win_replace_button"), 8, 184, 75, 25)
+	Local $_edit_replace_attribut_gui_CancelButton = GUICtrlCreateButton(_MultiLang_GetText("win_replace_cancelbutton"), 144, 184, 75, 25)
+
+	For $B_XMLElements = 0 To $Nb_XMLElements
+		If StringLeft($A_XMLFormat[$B_XMLElements][1], 5) = "value" Or StringLeft($A_XMLFormat[$B_XMLElements][1], 5) = "path:" Then _ArrayAdd($A_XMLFormat_TEMP, $A_XMLFormat[$B_XMLElements][0])
+	Next
+	_ArrayDelete($A_XMLFormat_TEMP, 0)
+
+	;Create List of available attribut
+	For $i = 0 To UBound($A_XMLFormat_TEMP) - 1
+		GUICtrlSetData($_edit_replace_attribut_gui_Combo, $A_XMLFormat_TEMP[$i], "(" & _MultiLang_GetText("win_replace_Title") & ")")
+	Next
+
+	GUISetState(@SW_SHOW)
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE, $_edit_replace_attribut_gui_CancelButton
+				GUIDelete($_edit_replace_attribut_gui_GUI)
+				GUISetState(@SW_ENABLE, $F_UniversalEditor)
+				WinActivate($F_UniversalEditor)
+				Return
+			Case $_edit_replace_attribut_gui_ReplaceButton
+				Local $_selected = GUICtrlRead($_edit_replace_attribut_gui_Combo)
+				Local $_SourceInput = GUICtrlRead($_edit_replace_attribut_gui_SourceInput)
+				Local $_CibleInput = GUICtrlRead($_edit_replace_attribut_gui_CibleInput)
+
+				For $B_XMLElements = 0 To $Nb_XMLElements
+					If $A_XMLFormat[$B_XMLElements][1] = "root" Then Local $xpath_root = "//" & $A_XMLFormat[$B_XMLElements][0]
+				Next
+
+				_XMLFileOpen($V_XMLPath)
+				If @error Then
+					ConsoleWrite("!_XMLFileOpen : " & $V_XMLPath & " : " & _XMLError("") & @CRLF) ; Debug
+					Return -1
+				EndIf
+
+				For $B_XMLList = 0 To UBound($A_XMLList) - 1
+					Local $sNode_Values = _XMLGetValue($xpath_root & "/*[" & $B_XMLList & "]/" & $_selected)
+					If IsArray($sNode_Values) Then
+						ConsoleWrite($_selected & "=" & $sNode_Values[1] & @CRLF);Debug
+						$XMLValue = StringReplace($sNode_Values[1], $_SourceInput, $_CibleInput)
+						_XMLUpdateField($xpath_root & "/*[" & $B_XMLList & "]/" & $_selected, StringReplace($XMLValue, $_SourceInput, $_CibleInput))
+						ConsoleWrite('>' & $_selected & "=" & $XMLValue & @CRLF);Debug
+					EndIf
+				Next
+				GUIDelete($_edit_replace_attribut_gui_GUI)
+				GUISetState(@SW_ENABLE, $F_UniversalEditor)
+				WinActivate($F_UniversalEditor)
+				Return
+		EndSwitch
+	WEnd
+
+EndFunc   ;==>_EDIT_REPLACE
 

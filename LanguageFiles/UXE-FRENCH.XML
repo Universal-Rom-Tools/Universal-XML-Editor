@@ -9,6 +9,7 @@
 		<mnu_file_xml>Charger un fichier XML</mnu_file_xml>
 		<mnu_file_exit>Quitter</mnu_file_exit>
 		<mnu_edit>Edition</mnu_edit>
+		<mnu_edit_replace>Remplacer</mnu_edit_replace>
 		<mnu_edit_langue>Changer de langue</mnu_edit_langue>
 		<mnu_edit_config>Configuration</mnu_edit_config>
 		<mnu_help>Aide</mnu_help>
@@ -27,6 +28,14 @@
 			<win_sel_profil_text>Merci de sélectionner un profil</win_sel_profil_text>
 			<win_sel_profil_button>Sélectionner</win_sel_profil_button>
 		</win_sel_profil>
+		<win_replace>
+			<win_replace_Title>Remplacement</win_replace_Title>
+			<win_replace_text>Merci de sélectionner un attribut</win_replace_text>
+			<win_replace_source>Remplacer</win_replace_source>
+			<win_replace_cible>par</win_replace_cible>
+			<win_replace_button>Remplacer</win_replace_button>
+			<win_replace_cancelbutton>Annuler</win_replace_cancelbutton>
+		</win_replace>
 		<win_config>
 			<win_config_Title>Configuration</win_config_Title>
 			<win_config_GroupScrap>Scraper</win_config_GroupScrap>
