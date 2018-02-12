@@ -2,10 +2,10 @@
 </progressbar>
 
 <gui>
-	<main_gui>Universale XML Editor</main_gui>
+	<main_gui>Universal XML Editor</main_gui>
 	<menu>
 		<mnu_file>File</mnu_file>
-		<mnu_file_profil>Load profil</mnu_file_profil>
+		<mnu_file_profil>Load profile</mnu_file_profil>
 		<mnu_file_xml>Load XML File</mnu_file_xml>
 		<mnu_file_exit>Exit</mnu_file_exit>
 		<mnu_edit>Edit</mnu_edit>
@@ -17,15 +17,15 @@
 	</menu>
 	<windows>
 		<lv_roms>Roms</lv_roms>
-		<lv_attributs>Attributs|Values</lv_attributs>
+		<lv_attributs>Attributes|Values</lv_attributs>
 		<win_sel_langue>
 			<win_sel_langue_Title>Select a language</win_sel_langue_Title>
 			<win_sel_langue_text>Please select a language</win_sel_langue_text>
 			<win_sel_langue_button>Select</win_sel_langue_button>
 		</win_sel_langue>
 		<win_sel_profil>
-			<win_sel_profil_Title>Select a profil</win_sel_profil_Title>
-			<win_sel_profil_text>Please select a profil</win_sel_profil_text>
+			<win_sel_profil_Title>Select a profile</win_sel_profil_Title>
+			<win_sel_profil_text>Please select a profile</win_sel_profil_text>
 			<win_sel_profil_button>Select</win_sel_profil_button>
 		</win_sel_profil>
 		<win_config>
@@ -35,7 +35,7 @@
 			<win_config_GroupScrap_PathXML>XML file path</win_config_GroupScrap_PathXML>
 			<win_config_GroupScrap_PathRomSub>Roms path in XML file</win_config_GroupScrap_PathRomSub>
 			<win_config_GroupImage>Pictures</win_config_GroupImage>
-			<win_config_GroupImage_PathImage>Download Pictures path</win_config_GroupImage_PathImage>
+			<win_config_GroupImage_PathImage>Download pictures path</win_config_GroupImage_PathImage>
 			<win_config_GroupImage_hautImage>Height</win_config_GroupImage_hautImage>
 			<win_config_GroupImage_LongImage>Width</win_config_GroupImage_LongImage>
 			<win_config_GroupImage_PathImageSub>Pictures path in XML file</win_config_GroupImage_PathImageSub>
@@ -48,7 +48,7 @@
 <windows>
 	<win_About>
 		<win_About_Title>About</win_About_Title>
-		<win_About_By>Created by : Screech</win_About_By>
-		<win_About_Thanks>Thanks to :</win_About_Thanks>
+		<win_About_By>Created by: Screech</win_About_By>
+		<win_About_Thanks>Thanks to:</win_About_Thanks>
 	</win_About>
 </windows>
